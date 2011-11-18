@@ -124,10 +124,7 @@ watchit = (target, options, callback) ->
             if (isDir and options.recurse) or (!isDir and options.include)
               # `watchit` returns null if target is already watched
               if watchit itemPath, extend({emitter}, options)
-                if initial
-                  emitter.emit 'success', itemPath
-                else
-                  emitter.emit 'create', itemPath
+                emitter.emit 'create', itemPath unless initial
 
   emitter
 
@@ -136,6 +133,7 @@ watchit = (target, options, callback) ->
 class WatchitEmitter extends EventEmitter
   constructor: (@callback) ->
   emit: (event, filename, etc...) ->
+    return if event is 'newListener'
     super event, filename, etc...
     super 'all', event, filename, etc...
     @callback? event, filename, etc...
