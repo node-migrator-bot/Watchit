@@ -1,0 +1,20 @@
+{
+  "author": "Trevor Burnham (http://trevorburnham.com)",
+  "name": "watchit",
+  "description": "A sensible wrapper around fs.watch",
+  "version": "0.0.1",
+  "engines":      {
+    "node":       ">=0.6.1"
+  },
+  "homepage": "http://github.com/TrevorBurnham/watchit",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/TrevorBurnham/watchit.git"
+  },
+  "main": "lib/watchit.js",
+  "devDependencies": {
+    "coffee-script": "1.1.3",
+    "nodeunit": "0.6.2",
+    "watchit": "0.0.1"
+  }
+}

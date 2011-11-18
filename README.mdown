@@ -1,0 +1,72 @@
+# Watchit
+
+A sensible wrapper around `[fs.watch](http://nodejs.org/docs/latest/api/fs.html#fs.watch)`.
+
+Written in CoffeeScript by the author of *[CoffeeScript: Accelerated JavaScript Development](http://pragprog.com/book/tbcoffee/coffeescript)*.
+
+## Usage
+
+Install with [npm](http://npmjs.org/). Then:
+
+    watchit = require('watchit');
+    watchit('target', options, callback);
+
+where `target` is the path to a file or directory, `options` is a hash (see
+below) and `callback` is a function of the form
+
+    callback = function(event) { ... }
+
+Both `options` and `callback` are optional.
+
+`watchit` also returns an `EventEmitter` that emits the same events received
+by `callback` (more on that below). You can also call `close()` on the emitter
+to "unwatch" the target.
+
+## Options
+
+`watchit` is designed to work as a drop-in replacement for `fs.watch` by
+default, but in most cases you'll want to modify one or more of these options:
+
+* `retain` (default: **false**) means that if something is later created at
+the same location as the target, the new entity will be watched.
+* `include` (default: **false**) means that if the target is a directory,
+files contained in that directory will be treated like targets. (Otherwise,
+directory events will be forwarded directly from `fs.watch`.)
+* `follow` (default: **false**) means that if a target is moved, it will still
+be watched. If both `retain` and `follow` are enabled, then both paths will be
+watched.
+* `recurse` (default: **false**) means that if the target is a directory, all
+of its subdirectories will also be counted as targets.
+* `persistent` is identical to `fs.watch`'s `persistent` option. If
+disabled, the process may exit while files are still being watched.
+
+## The emitter
+
+The emitter returned by `watchit` emits events in two ways:
+
+1. **`fs.watch`-style**: Bind a callback that takes the event name, filename,
+and possibly other args with `emitter.on('all', callback)`. (**Note**: With
+`fs.watch`, this would be `emitter.on 'change'`. Unfortunately, `'change'` is
+also one of the two event names that `fs.watch` can return; to avoid
+confusion, Watchit uses the `'all'` convention from
+[Backbone.js](http://documentcloud.github.com/backbone/#Events).)
+1. **By event**: Bind a callback that takes the filename, and possibly other
+args, to a specific event: `'change'`, `'create'` or `'unlink'`. For example,
+`emitter.on('change', callback)`.
+
+## A word of warning
+
+The Node team is, as of version 0.6.1, still working the kinks out of
+`fs.watch`. Watchit should be considered a good alternative to dealing with
+`fs.watch` yourself, but you may nonetheless encounter some quirks--and even
+fatal errors. Check the issue tracker:
+
+https://github.com/joyent/node/issues/search?q=fs.watch&state=open
+
+In addition, watchit itself is a new project, and the test suites are
+incomplete. If you run into any problems that you can replicate in a small
+test case, please don't hesitate to report them.
+
+## License
+
+http://trevorburnham.mit-license.org
