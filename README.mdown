@@ -1,6 +1,6 @@
 # Watchit
 
-A sensible wrapper around `[fs.watch](http://nodejs.org/docs/latest/api/fs.html#fs.watch)`.
+A sensible wrapper around [fs.watch](http://nodejs.org/docs/latest/api/fs.html#fs.watch).
 
 Written in CoffeeScript by the author of *[CoffeeScript: Accelerated JavaScript Development](http://pragprog.com/book/tbcoffee/coffeescript)*.
 
@@ -44,7 +44,7 @@ disabled, the process may exit while files are still being watched.
 
 The emitter returned by `watchit` emits events in two ways:
 
-1. **`fs.watch`-style**: Bind a callback that takes the event name, filename,
+1. **fs.watch-style**: Bind a callback that takes the event name, filename,
 and possibly other args with `emitter.on('all', callback)`. (**Note**: With
 `fs.watch`, this would be `emitter.on 'change'`. Unfortunately, `'change'` is
 also one of the two event names that `fs.watch` can return; to avoid
