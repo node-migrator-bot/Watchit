@@ -6,10 +6,10 @@
   "engines":      {
     "node":       ">=0.6.1"
   },
-  "homepage": "http://github.com/TrevorBurnham/watchit",
+  "homepage": "http://github.com/TrevorBurnham/Watchit",
   "repository": {
     "type": "git",
-    "url": "git://github.com/TrevorBurnham/watchit.git"
+    "url": "git://github.com/TrevorBurnham/Watchit.git"
   },
   "main": "lib/watchit.js",
   "devDependencies": {
