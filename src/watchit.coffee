@@ -5,19 +5,20 @@ path           = require 'path'
 # Options:
 # * `retain` means that if something is later created at the same location
 # as the target, the new entity will be watched.
+# * `debounce` means that changes that occur within 1 second of each other
+# will be treated as a single change. This also allows "echo" events that
+# occur under OS X to be ignored.
 # * `include` means that if the target is a directory, files contained in that
 # directory will be treated like targets. (Otherwise, directory events will
 # be forwarded directly from `fs.watch`.)
-# * `follow` means that if a target is moved, it will still be watched. If
-# both `retain` and `follow` are enabled, then both paths will be watched.
 # * `recurse` means that if the target is a directory, all of its
 # subdirectories will also be counted as targets.
 # * `persistent` is identical to `fs.watch`'s `persistent` option. If
 # disabled, the process may exit while files are being watched.
 defaults =
   retain: false
+  debounce: false
   include: false
-  follow: false
   recurse: false
   persistent: true
 
@@ -35,11 +36,11 @@ watchit = (target, options, callback) ->
   # first time a target is found or not found, respectively.
   emitter = options.emitter = options.emitter ? new WatchitEmitter(callback)
 
-  # `emitter` also keeps track of targets to prevent us from watching the same
-  # target more than once with `include`/`recurse`.
+  # `emitter` also keeps track of the mtime on each target. If a target is
+  # already being watched on the same emitter, we return `null` rather than
+  # watch the same target multiple times.
   emitter.targets ?= {}
   return null if emitter.targets[target]
-  emitter.targets[target] = true
 
   # The emitter can also be used to stop the watching process. Because the
   # same emitter is used for directory children (if `include` or `recurse` is
@@ -50,6 +51,7 @@ watchit = (target, options, callback) ->
 
   # Start watching
   do watchTarget = ->
+    emitter.targets[target] = {}
     fs.stat target, (err, stats) ->
       fail = (err) ->
         if options.retain
@@ -61,6 +63,7 @@ watchit = (target, options, callback) ->
 
       return fail err if err
 
+      emitter.targets[target].stats = stats
       try
         if stats.isDirectory()
           fswatcher = watchTargetDir()
@@ -76,27 +79,34 @@ watchit = (target, options, callback) ->
   # If the target is lost and `retain` is enabled, we `watchTarget` again
   retainTarget = watchTarget
 
-  # If the target is lost and `follow` is disabled, we close the `FSWatcher`
+  # If the target is lost, we close the `FSWatcher`
   unwatchTarget = ->
     fswatcher.close()
-    delete emitter.targets[target] unless options.retain
+    delete emitter.targets[target]
 
   watchTargetFile = ->
     fs.watch target, {persistent: options.persistent}, (event) ->
       if event is 'rename'
         # Has the target been unlinked, or merely replaced?
-        console.log "fs.stat", target
         fs.stat target, (err) ->
           if err
-            unwatchTarget() unless options.follow
+            unwatchTarget()
             retainTarget() if options.retain
-            console.log "Retaining #{target}: #{options.retain}"
             # TODO: Distinguish renames from unlinks, somehow
             emitter.emit 'unlink', target
           else
             emitter.emit 'change', target
       else if event is 'change'
-        emitter.emit 'change', target
+        if options.debounce
+          conditionalTimeout target, 1000, ->
+            fs.stat target, (err, stats) ->
+              return if err or target not of emitter.targets
+              prevStats = emitter.targets[target].stats
+              return if stats.mtime.getTime() is prevStats.mtime.getTime()
+              emitter.targets[target].stats = stats
+              emitter.emit 'change', target
+        else
+          emitter.emit 'change', target
 
   watchTargetDir = ->
     fs.watch target, {persistent: options.persistent}, (event, filename) ->
@@ -104,7 +114,7 @@ watchit = (target, options, callback) ->
         # Is this happening to the target, or one of its children?
         fs.stat target, (err) ->
           if err
-            unwatchTarget() unless options.follow
+            unwatchTarget()
             retainTarget() if options.retain
             emitter.emit 'unlink', target
           else
@@ -144,6 +154,16 @@ extend = (obj, sources...) ->
       obj[prop] = source[prop] if prop of source
   obj
 
+# Set a timeout, unless a timeout with the same key already exists.
+pendingTimeouts = {}
+conditionalTimeout = (key, time, callback) ->
+  return if key of pendingTimeouts
+  pendingTimeouts[key] = 1
+  setTimeout (->
+    delete pendingTimeouts[key]
+    callback()
+  ), time
+
 # To be notified when `target` does not exist, we must watch its parent.
 notifyWhenExists = (target, callback) ->
   throw new Error 'notifyWhenExists requires a callback' unless callback
@@ -177,4 +197,5 @@ notifyWhenExists = (target, callback) ->
 # While Watchit's main export is its titular function, functions which can be
 # tested independently are attached.
 module.exports = watchit
+module.exports.conditionalTimeout = conditionalTimeout
 module.exports.notifyWhenExists = notifyWhenExists

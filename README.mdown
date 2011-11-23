@@ -29,12 +29,12 @@ default, but in most cases you'll want to modify one or more of these options:
 
 * `retain` (default: **false**) means that if something is later created at
 the same location as the target, the new entity will be watched.
+* `debounce` (default: **false**) means that changes that occur within 1
+second of each other will be treated as a single change. This also allows
+"echo" events that occur under OS X to be ignored.
 * `include` (default: **false**) means that if the target is a directory,
 files contained in that directory will be treated like targets. (Otherwise,
 directory events will be forwarded directly from `fs.watch`.)
-* `follow` (default: **false**) means that if a target is moved, it will still
-be watched. If both `retain` and `follow` are enabled, then both paths will be
-watched.
 * `recurse` (default: **false**) means that if the target is a directory, all
 of its subdirectories will also be counted as targets.
 * `persistent` is identical to `fs.watch`'s `persistent` option. If
@@ -54,9 +54,34 @@ confusion, Watchit uses the `'all'` convention from
 args, to a specific event: `'change'`, `'create'` or `'unlink'`. For example,
 `emitter.on('change', callback)`.
 
+## Major differences vs. `fs.watch`
+
+With Watchit:
+
+1. Duplicate changes (those that do not modify `mtime`) are ignored; this
+works around a notable `fs.watch` bug under OS X.
+1. After a file is renamed, it will no longer emit events. That is, Watchit
+does not "follow" moved files the way `fs.watch` does. (Why? Because this
+behavior is inconsistent across OSes, and there's currently no way to
+determine the new location of the file.)
+1. Emitted events differ (see below)
+
+## Events
+
+* `'success'`/`'failure'`: When a target is first watched, a `'success'` event will be emitted if it already exists, and `failure` if it does not exist.
+(`'failure'` is not emitted if the `retain` option is set.)
+* `'change'`: Same as `fs.watch`'s `'change'`.
+* `'create'`: Emitted when the target is created (or, in `include` mode, when
+a child of the target directory is created).
+* `'unlink'`: Emitted when the target no longer exists at its current location
+(or, in `include` mode, when a child of the target directory no long exists).
+
+Note that `create` and `unlink` are finer-grained versions of `fs.watch`'s
+`rename`.
+
 ## A word of warning
 
-The Node team is, as of version 0.6.1, still working the kinks out of
+The Node team is, as of version 0.6.2, still working the kinks out of
 `fs.watch`. Watchit should be considered a good alternative to dealing with
 `fs.watch` yourself, but you may nonetheless encounter some quirks--and even
 fatal errors. Check the issue tracker:

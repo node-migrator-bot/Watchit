@@ -1,7 +1,16 @@
-{notifyWhenExists} = require '../src/watchit'
+{conditionalTimeout, notifyWhenExists} = require '../src/watchit'
 fs = require 'fs'
 
 delay = (func) -> setTimeout func, 20
+
+exports['conditionalTimeout can be used to debounce a function'] = (test) ->
+  callCount = 0
+  conditionalTimeout 'foo', 10, -> callCount++
+  conditionalTimeout 'foo', 10, -> callCount++
+  conditionalTimeout 'foo', 10, -> callCount++
+  delay ->
+    test.equal callCount, 1
+    test.done()
 
 exports['notifyWhenExists calls back if the target already exists'] = (test) ->
   fs.writeFileSync 'fixtures/a.test', ''

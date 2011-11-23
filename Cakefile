@@ -34,8 +34,8 @@ test = ->
   suiteNames = [
     'helpers'
     'retain'
+    'debounce'
     'include'
-    'follow'
     'recurse'
   ]
   idx = 0
@@ -50,7 +50,7 @@ test = ->
     if idx is suiteNames.length
       setTimeout process.exit, 5000
     else
-      setTimeout (-> runNextTestSuite()), 1000
+      setTimeout (-> runNextTestSuite()), 2000
 
 task 'test', 'Run the test suite (and re-run if anything changes)', ->
   nodeunit = null
