@@ -14,7 +14,8 @@
   "main": "lib/watchit.js",
   "devDependencies": {
     "coffee-script": "1.1.3",
-    "nodeunit": "0.6.2",
-    "watchit": "0.0.2"
+    "watchit": "0.0.2",
+    "mocha": "1.0.1",
+    "expect.js": "0.1.2"
   }
 }
