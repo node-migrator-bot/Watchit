@@ -92,6 +92,9 @@ In addition, watchit itself is a new project, and the test suites are
 incomplete. If you run into any problems that you can replicate in a small
 test case, please don't hesitate to report them.
 
+## Contributing
+Run tests via `./node_modules/.bin/mocha --compilers coffee:coffee-script --require test/common.js --colors --reporter spec`.
+
 ## License
 
 http://trevorburnham.mit-license.org

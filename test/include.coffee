@@ -1,42 +1,42 @@
-watchit = require '../src/watchit'
-fs = require 'fs'
+fs   = require 'fs'
+path = require 'path'
 
-delay = (func) -> setTimeout func, 50
+describe 'watchit', ->
+  describe 'options.ignored', ->
+    it 'should monitor several children', (done) ->
+      try
+        fs.mkdirSync fixture 'musketeers'
+      try
+        fs.writeFileSync (fixture 'musketeers', 'Athos.test'), ''
+      try
+        fs.unlinkSync fixture 'musketeers', 'Porthos.test'
+      try
+        fs.unlinkSync fixture 'musketeers', 'Aramis.test'
 
-exports['watchit can monitor several children'] = (test) ->
-  try
-    fs.mkdirSync 'fixtures/musketeers'
-  try
-    fs.writeFileSync 'fixtures/musketeers/Athos.test', ''
-  try
-    fs.unlinkSync 'fixtures/musketeers/Porthos.test'
-  try
-    fs.unlinkSync 'fixtures/musketeers/Aramis.test'
+      changeCount = 0
+      createCount = 0
+      unlinkCount = 0
 
-  changeCount = 0
-  createCount = 0
-  unlinkCount = 0
+      emitter = watchit (fixture 'musketeers'), include: yes
+      emitter.on 'change', -> changeCount++
+      emitter.on 'create', -> createCount++
+      emitter.on 'unlink', -> unlinkCount++
 
-  emitter = watchit 'fixtures/musketeers', include: true
-  emitter.on 'change', -> changeCount++
-  emitter.on 'create', -> createCount++
-  emitter.on 'unlink', -> unlinkCount++
-
-  delay ->
-    fs.writeFileSync 'fixtures/musketeers/Porthos.test', ''
-    delay ->
-      test.equal 1, createCount, '1 file created'
-      fs.writeFileSync 'fixtures/musketeers/Athos.test', 'All for one!'
       delay ->
-        test.equal 1, changeCount, '1 file changed'
-        fs.writeFileSync 'fixtures/musketeers/Aramis.test', ''
+        fs.writeFileSync (fixture 'musketeers', 'Porthos.test'), ''
         delay ->
-          test.equal 2, createCount, '2 files created'
-          fs.unlinkSync 'fixtures/musketeers/Athos.test'
-          fs.unlinkSync 'fixtures/musketeers/Porthos.test'
-          fs.unlinkSync 'fixtures/musketeers/Aramis.test'
+          expect(createCount).to.be(1)
+          fs.writeFileSync (fixture 'musketeers', 'Athos.test'), 'All for one!'
           delay ->
-            test.equal 1, changeCount, '1 file changed (still)'
-            test.equal 2, createCount, '2 files created (still)'
-            test.equal 3, unlinkCount, '3 files unlinked'
-            test.done()
+            expect(changeCount).to.be(1)
+            fs.writeFileSync (fixture 'musketeers', 'Aramis.test'), ''
+            delay ->
+              expect(createCount).to.be(2)
+              fs.unlinkSync fixture 'musketeers', 'Athos.test'
+              fs.unlinkSync fixture 'musketeers', 'Porthos.test'
+              fs.unlinkSync fixture 'musketeers', 'Aramis.test'
+              delay ->
+                expect(changeCount).to.be(1)
+                expect(createCount).to.be(2)
+                expect(unlinkCount).to.be(3)
+                done()

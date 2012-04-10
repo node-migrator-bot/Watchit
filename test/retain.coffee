@@ -1,32 +1,33 @@
-watchit = require '../src/watchit'
-fs = require 'fs'
+fs   = require 'fs'
+path = require 'path'
 
-delay = (func) -> setTimeout func, 50
+describe 'watchit', ->
+  describe 'options.retain', ->
+    it 'should emit create, unlink, and change events', (done) ->
+      file = fixture 'a.test'
+      try
+        fs.unlinkSync file
 
-exports['watchit emits create, unlink, and change events'] = (test) ->
-  try
-    fs.unlinkSync 'fixtures/a.test'
+      changeCount = 0
+      createCount = 0
+      unlinkCount = 0
 
-  changeCount = 0
-  createCount = 0
-  unlinkCount = 0
+      emitter = watchit file, retain: true
+      emitter.on 'change', -> changeCount++
+      emitter.on 'create', -> createCount++
+      emitter.on 'unlink', -> unlinkCount++
 
-  emitter = watchit 'fixtures/a.test', retain: true
-  emitter.on 'change', -> changeCount++
-  emitter.on 'create', -> createCount++
-  emitter.on 'unlink', -> unlinkCount++
-
-  fs.writeFileSync 'fixtures/a.test', ''
-  test.done()  # until fs.watch is fixed...
-  # delay ->
-  #   test.equal 1, createCount
-  #   fs.unlinkSync 'fixtures/a.test'
-  #   delay ->
-  #     test.equal 1, unlinkCount
-  #     fs.writeFileSync 'fixtures/a.test', ''
-  #     delay ->
-  #       test.equal 2, createCount
-  #       fs.writeFileSync 'fixtures/a.test', 'cha-cha-cha-change'
-  #       delay ->
-  #         test.equal 1, changeCount
-  #         test.done()
+      fs.writeFileSync file, ''
+      done()  # until fs.watch is fixed...
+      # delay ->
+      #   expect(createCount).to.be(1)
+      #   fs.unlinkSync 'fixtures/a.test'
+      #   delay ->
+      #     expect(unlinkCount).to.be(1)
+      #     fs.writeFileSync 'fixtures/a.test', ''
+      #     delay ->
+      #       expect(createCount).to.be(2)
+      #       fs.writeFileSync 'fixtures/a.test', 'cha-cha-cha-change'
+      #       delay ->
+      #         expect(changeCount).to.be(1)
+      #         done()

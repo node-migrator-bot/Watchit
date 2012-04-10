@@ -15,12 +15,15 @@ path           = require 'path'
 # subdirectories will also be counted as targets.
 # * `persistent` is identical to `fs.watch`'s `persistent` option. If
 # disabled, the process may exit while files are being watched.
+# * `ignore` could contain RegExp pattern or function against which
+# added files will be tested.
 defaults =
   retain: false
   debounce: false
   include: false
   recurse: false
   persistent: true
+  ignored: null
 
 # ## Main function
 watchit = (target, options, callback) ->
@@ -30,6 +33,16 @@ watchit = (target, options, callback) ->
     options = {}
 
   options = extend {}, defaults, options ? {}
+
+  # Generic function that will check if some file is ignored.
+  ignored = (file) ->
+    if options.ignored
+      if typeof options.ignored.test is 'function'
+        options.ignored.test(file)
+      else
+        options.ignored(file)
+    else
+      no
 
   # `emitter` will be returned from the function; it emits "change", "create",
   # and "unlink" events. It also emits "success" and "failure" events the
@@ -128,7 +141,9 @@ watchit = (target, options, callback) ->
       return if err
       for item in items
         do (item) ->
-          fs.stat itemPath = path.join(target, item), (err, stats) ->
+          return if ignored item
+          itemPath = path.join(target, item)
+          fs.stat itemPath, (err, stats) ->
             return if err
             isDir = stats.isDirectory()
             if (isDir and options.recurse) or (!isDir and options.include)
