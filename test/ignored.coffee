@@ -1,7 +1,9 @@
+fs      = require 'fs'
+path    = require 'path'
 watchit = require '../src/watchit'
-fs = require 'fs'
 
-delay = (func) -> setTimeout func, 50
+delay   = (func) -> setTimeout func, 50
+fixture = (pathes...) -> path.join __dirname, 'fixtures', pathes...
 
 exports['should not watch ignored files'] = (test) ->
   changed  = no
@@ -9,10 +11,10 @@ exports['should not watch ignored files'] = (test) ->
   watcher  = watchit 'fixtures', options, (event, file) ->
     return if event not in ['create', 'unlink', 'change']
     changed = yes
-  fs.writeFileSync 'fixtures/.meh'
+  fs.writeFileSync fixture '.meh'
   delay ->
     test.equal no, changed
-    fs.unlinkSync 'fixtures/.meh'
+    fs.unlinkSync fixture '.meh'
     delay ->
       test.equal no, changed
       watcher.close()

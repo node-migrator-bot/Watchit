@@ -1,22 +1,25 @@
+fs      = require 'fs'
+path    = require 'path'
 watchit = require '../src/watchit'
-fs = require 'fs'
 
-delay = (func) -> setTimeout func, 50
+delay   = (func) -> setTimeout func, 50
+fixture = (pathes...) -> path.join __dirname, 'fixtures', pathes...
 
 exports['watchit emits create, unlink, and change events'] = (test) ->
+  file = fixture 'a.test'
   try
-    fs.unlinkSync 'fixtures/a.test'
+    fs.unlinkSync file
 
   changeCount = 0
   createCount = 0
   unlinkCount = 0
 
-  emitter = watchit 'fixtures/a.test', retain: true
+  emitter = watchit file, retain: true
   emitter.on 'change', -> changeCount++
   emitter.on 'create', -> createCount++
   emitter.on 'unlink', -> unlinkCount++
 
-  fs.writeFileSync 'fixtures/a.test', ''
+  fs.writeFileSync file, ''
   test.done()  # until fs.watch is fixed...
   # delay ->
   #   test.equal 1, createCount

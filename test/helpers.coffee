@@ -1,7 +1,9 @@
+fs   = require 'fs'
+path = require 'path'
 {conditionalTimeout, notifyWhenExists} = require '../src/watchit'
-fs = require 'fs'
 
-delay = (func) -> setTimeout func, 20
+delay   = (func) -> setTimeout func, 20
+fixture = (pathes...) -> path.join __dirname, 'fixtures', pathes...
 
 exports['conditionalTimeout can be used to debounce a function'] = (test) ->
   callCount = 0
@@ -13,32 +15,37 @@ exports['conditionalTimeout can be used to debounce a function'] = (test) ->
     test.done()
 
 exports['notifyWhenExists calls back if the target already exists'] = (test) ->
-  fs.writeFileSync 'fixtures/a.test', ''
-  notifyWhenExists 'fixtures/a.test', ->
-      fs.unlinkSync 'fixtures/a.test'
-      test.done()
+  file = fixture 'a.test'
+  fs.writeFileSync file, ''
+  notifyWhenExists file, ->
+    fs.unlinkSync file
+    test.done()
 
 exports['notifyWhenExists does not call back before target exists'] = (test) ->
   exists = false
+  file = fixture 'b.test'
   try
-    fs.unlinkSync 'fixtures/b.test'
+    fs.unlinkSync file
   delay ->
-    fs.writeFileSync('fixtures/b.test', '')
+    fs.writeFileSync file, ''
     exists = true
-  notifyWhenExists 'fixtures/b.test', ->
+  notifyWhenExists file, ->
     test.equal true, exists
   test.done()
 
 exports['notifyWhenExists works if target has no parent dir'] = (test) ->
   exists = false
+  parent = fixture 'parent'
+  child  = fixture 'parent', 'child.test'
+  file = fixture 'parent', 'child.test'
   try
-    fs.unlinkSync 'fixtures/parent/child.test'
+    fs.unlinkSync parent
   try
-    fs.rmdirSync 'fixtures/parent'
+    fs.rmdirSync parent
   delay ->
-    fs.mkdirSync 'fixtures/parent'
-    fs.writeFileSync 'fixtures/parent/child.test', ''
+    fs.mkdirSync parent
+    fs.writeFileSync child, ''
     exists = true
-  notifyWhenExists 'fixtures/parent/child.test', ->
+  notifyWhenExists child, ->
     test.equal true, exists
     test.done()
